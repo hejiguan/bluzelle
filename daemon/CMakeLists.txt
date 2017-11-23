@@ -26,22 +26,33 @@ endif()
 ###############################################################################
 # Primary project for the_db
 project(the_db)
-include_directories(websockets)
+include_directories(websockets command_line_options)
 set(SOURCE_FILES main.cpp  websockets/Listener.h websockets/Session.cpp websockets/Session.h)
 set(SOURCE_FILES
         command_line_options/CommandLineOptions.h
         command_line_options/CommandLineOptions.cpp
-        main.cpp)
+        main.cpp
+        websockets/Listener.h
+        websockets/Session.cpp
+        websockets/Session.h
+        websockets/WebSocketServer.h
+        )
 add_executable(the_db ${SOURCE_FILES})
 target_link_libraries(the_db ${Boost_LIBRARIES})
 
 ###############################################################################
 # Unit tests
 message(STATUS "*** CMakeLists for bluzelled_test")
+enable_testing()
 
-include_directories(websockets)
-set(SOURCE_FILES test.cpp websockets/Listener.h websockets/Session.cpp websockets/Session.h)
+include_directories(websockets command_line_options)
 set(SOURCE_FILES
+        test.cpp
+        websockets/Listener.h
+        websockets/Session.cpp
+        websockets/Session.h
+        websockets/WebSocketServer.h
+        websockets/WebSocketServer_tests.cpp
         command_line_options/CommandLineOptions.h
         command_line_options/CommandLineOptions.cpp
         command_line_options/command_line_options_test.cpp
