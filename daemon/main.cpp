@@ -4,7 +4,8 @@
 #include <boost/thread.hpp>
 
 
-#include "command_line_options/CommandLineOptions.h"
+#include "CommandLineOptions.h"
+#include "Node.h"
 
 
 int main(int argc, char *argv[]) {
@@ -33,6 +34,19 @@ int main(int argc, char *argv[]) {
     std::cout << "Running node: " << options.get_address() << std::endl
               << "     on port: " << options.get_port() << std::endl
               << " config path: " << options.get_config() << std::endl;
+
+
+    Node this_node(address, port, "./known_nodes");
+    try
+        {
+        this_node.run();
+        }
+    catch (std::exception& ex)
+        {
+        std::cout << ex.what() << std::endl;
+        return 1;
+        }
+
 
     return 0;
 }

@@ -37,6 +37,14 @@ endif()
 ###############################################################################
 # Primary project for the_db
 project(the_db)
+include_directories(
+        .
+        websockets
+        command_line_options
+        peers
+        storage
+        raft
+)
 include_directories(websockets command_line_options)
 set(SOURCE_FILES
         command_line_options/CommandLineOptions.h
@@ -46,6 +54,30 @@ set(SOURCE_FILES
         websockets/Session.cpp
         websockets/Session.h
         websockets/WebSocketServer.h
+        command_line_options/CommandLineOptions.h
+        command_line_options/CommandLineOptions.cpp
+        peers/Peer.h
+        peers/Peer.cpp
+        peers/PeerList.h
+        peers/PeerList.cpp
+        peers/PeerListener.h
+        peers/PeerListener.cpp
+        peers/PeerSession.h
+        peers/PeerSession.cpp
+        peers/PeerServer.h
+        peers/PeerServer.cpp
+        peers/PeerDialer.h
+        peers/PeerDialer.cpp
+        storage/Storage.h
+        storage/Storage.cpp
+        raft/Raft.h
+        raft/Raft.cpp
+        NodeInfo.hpp
+        Singleton.hpp
+        Node.h
+        Node.cpp
+        main.cpp
+        )
         )
 add_executable(the_db ${SOURCE_FILES})
 target_link_libraries(the_db ${Boost_LIBRARIES})

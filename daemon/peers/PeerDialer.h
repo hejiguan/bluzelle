@@ -1,0 +1,8 @@
+#ifndef BLUZELLE_PEERDIALER_H
+#define BLUZELLE_PEERDIALER_H
+
+class PeerDialer {
+
+};
+
+#endif //BLUZELLE_PEERDIALER_H
