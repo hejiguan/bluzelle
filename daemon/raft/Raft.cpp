@@ -1,6 +1,15 @@
+#include <iostream>
+
+#include <boost/property_tree/json_parser.hpp>
+
 #include "Raft.h"
 
-Raft::Raft(const NodeInfo& info) : storage_("./storage_" + info.name_ + ".txt") {
+Raft::Raft(boost::asio::io_service& ios, const NodeInfo& i)
+        : ios_(ios),
+          info_(i),
+          storage_("./storage_" + info_.name_ + ".txt")/*,
+          heartbeat_timer_(ios_, boost::posix_time::milliseconds(raft_default_heartbeat_interval_milliseconds))*/
+{
 
 }
 
@@ -11,20 +20,40 @@ void Raft::run() {
 
     // Leader is hardcoded: node with port ending with '0' is always a leader.
 
-    if (info_.port_ % 10 == 0)// This node is leader. [todo] replace with actual leader election.
-        info_.state_ == State::leader;
-    else // I am not the leader, find out who is.
+    if (info_.port_ % 10 == 0) // This node is leader. [todo] replace with actual leader election.
         {
-        // Check if any connected node is a leader
-        // reach out to all the rest of known nodes and ask them if one of them is a leader.
-        // Two lists: known nodes and connected nodes (these have sessions)
+        info_.state_ = State::leader;
         }
+
+    // Check if any connected node is a leader
+    // reach out to all the rest of known nodes and ask them if one of them is a leader.
+    // Two lists: known nodes and connected nodes (these have sessions)
+
+    if (info_.state_ == State::leader)
+        {
+        std::cout << "I am leader" << std::endl;
+
+        // start heartbeat.
+        //heartbeat_timer_.async_wait(boost::bind(&Raft::heartbeat));
+        /*std::thread heartbeat_timer_io_thread(
+                [](){
+                    run();
+                    }
+        );
+        heartbeat_timer_io_thread.detach();*/
+        }
+    else
+        {
+        std::cout << "I am follower" << std::endl;
+        }
+
+
 
     // How CRUD works? Am I writing to any node and it sends it to leader or I can write to leader only.
     // All goes through leader. Leader receives log entry and writes it locally, its state is uncommited.
     // Then leader sends the entry to all followers and waits for confirmation. When confirmation received
     // from majority the state changed to 'committed'. Then leader notify followers that entry is committed.
- }
+}
 
 void Raft::start_leader_election() {
 /*
@@ -34,18 +63,58 @@ void Raft::start_leader_election() {
     // Election_Timeout -> time to wait before starting new election (become a candidate)
     // Random in 150-300 ms interval
 
-    // After Eection_Timeout follower becomes candidate nd start election term, votes for itself and sends
+    // After Eection_Timeout follower becomes candidate and start election term, votes for itself and sends
     // Request_Vote messages to other nodes.
     // If node hasn't voted for itself or didn't reply to others node Request_Vote it votes "YES" otherwise "NO"
     // An resets election timeout (won't start new election).
     // When candidate received majority of votes it sets itself as leader.
-    // The leader sends Append_Entry messages to followers in Heartbeat_Tieout intervals. Followers respond
+    // The leader sends Append_Entry messages to followers in Heartbeat_Timeout intervals. Followers respond
     // If follower don't receive Append_Entry in time alotted new election term starts.
     // Handle Split_Vote
 }
 
+void Raft::heartbeat() {
+    for (auto& p : peers_)
+        {
+        p.send_request(ios_, "{\"raft\":\"append-entries\", \"data\":{}}"); // Send heartbeat message.
+        }
+
+    //re-schedule.
+    //heartbeat_timer_.expires_at(heartbeat_timer_.expires_at() + boost::posix_time::seconds(1));
+    //heartbeat_timer_.async_wait(boost::bind(heartbeat));
+}
+
 string Raft::handle_request(const string& req) {
     // [todo] command factory
+    auto cmd = from_json_string(req);
+    // [todo] Every message stored in message log to be send to GUI later.
+    auto message = cmd.get<string>("raft");
+    string response;
+
+    if (message == "append-entries")
+        {
+        auto payload = cmd.get<string>("data");
+        if (!payload.empty())
+            {
+            // CRUD transaction.
+            }
+        else
+            {
+            // Heartbeat message. Print it.
+            std::cout << "♥ :" << req << std::endl;
+            }
+        }
+    else if (message == "request-vote")
+        {
+        if (info_.state_ != State::candidate)
+            {
+            response = "{\"raft\":\"request-vote\", \"vote\":\"yes\"}";
+            }
+        else
+            {
+            response = "{\"raft\":\"request-vote\", \"vote\":\"no\"}";
+            }
+        }
 
     // Who_is_the_Leader
     // {"raft":"who_is_the_leader"} ->
@@ -54,21 +123,35 @@ string Raft::handle_request(const string& req) {
     // {"raft":"request-vote"} ->
     // {"raft":"request-vote", "vote":"yes"} <-
 
-    // {"raft":"append-entries", "data":{}} -> heartbeat
+    // {"raft":"append-entries", "data":{}} -> heartbeat, no response needed.
     // {"raft":"append-entries", "data":{"transaction-id":""}}
 
     // {"raft":"append-entries", "data":{"command":"create|read|update|delete" "key":"key", "value":"value", "transaction-id":"id-of-transaction"}} -> CRUD command, id of the transaction on leader node.
     // {"raft":"append-entries", "data":{"transaction-id":"id-of-transaction"}}
 
+    return response;
 }
 
+boost::property_tree::ptree Raft::from_json_string(const string& s) const {
+    std::stringstream ss;
+    ss << s;
 
-/*
- * command interface:
- * reqs are inbound and come from PeerServer
- * cmds are outbound and sent via PeerDialer
- * reqs can be of type "raft" only
- * cmds can be both "raft" and "crud"
- *
- * {"cmd|req":"raft|crud"}
- */
+    boost::property_tree::ptree json;
+    try
+        {
+        boost::property_tree::read_json(ss, json);
+        }
+    catch (boost::property_tree::json_parser_error& ex)
+        {
+        std::cout << "Raft::from_json_string() threw '" << ex.what() << "' parsing "<< std::endl;
+        std::cout << s << std::endl;
+        }
+
+
+    return json;
+}
+
+string Raft::to_json_string(boost::property_tree::ptree j) const {
+    return "";
+}
+

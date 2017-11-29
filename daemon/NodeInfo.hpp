@@ -4,10 +4,10 @@
 #include <string>
 #include<vector>
 
+#include "boost/date_time/posix_time/posix_time_types.hpp"
+
 using std::string;
 using std::vector;
-
-#include "PeerSession.h"
 
 enum class State {
     unknown,
@@ -18,7 +18,7 @@ enum class State {
 
 class NodeInfo {
 public:
-    string ip_;
+    string host_;
     ushort port_;
 
     string address_;
@@ -27,19 +27,17 @@ public:
     string name_;
     string config_;
 
-    std::weak_ptr<PeerSession> session_; // Corresponding session.s
-
     boost::posix_time::posix_time_system last_contacted_;
 
-    NodeInfo(const string& ip,
-             ushort port,
-             const string& address,
+    NodeInfo(const string& host, // IP address or name.
+             ushort port, // Port.
+             const string& address, // Etherium address
              bool leader,
              const string& name)
-    : ip_(ip), port_(port), address_(address), state_(State::unknown), name_(name) {}
+    : host_(host), port_(port), address_(address), state_(State::unknown), name_(name) {}
 
     NodeInfo() {
-        ip_ = "localhost";
+        host_ = "localhost";
         port_ = 58000;
         address_ = "0x0000000000000000000000000000000000000000";
         name_ = "this computer";

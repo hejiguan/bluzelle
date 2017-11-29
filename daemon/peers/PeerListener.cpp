@@ -13,7 +13,7 @@ PeerListener::PeerListener(boost::asio::io_service &ios,
     acceptor_.open(endpoint.protocol(), ec);
     if (ec)
         {
-        fail(ec, "open");
+        fail(ec, "PeerListener::open");
         return;
         }
 
@@ -21,7 +21,7 @@ PeerListener::PeerListener(boost::asio::io_service &ios,
     acceptor_.bind(endpoint, ec);
     if (ec)
         {
-        fail(ec, "bind");
+        fail(ec, "PeerListener::bind");
         return;
         }
 
@@ -30,7 +30,7 @@ PeerListener::PeerListener(boost::asio::io_service &ios,
             boost::asio::socket_base::max_connections, ec);
     if (ec)
         {
-        fail(ec, "listen");
+        fail(ec, "PeerListener::listen");
         return;
         }
 }
@@ -54,7 +54,7 @@ void PeerListener::do_accept() {
 void PeerListener::on_accept(boost::system::error_code ec) {
     if (ec)
         {
-        fail(ec, "accept");
+        fail(ec, "PeerListener::on_accept");
         }
     else
         {

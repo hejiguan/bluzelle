@@ -66,8 +66,6 @@ set(SOURCE_FILES
         peers/PeerSession.cpp
         peers/PeerServer.h
         peers/PeerServer.cpp
-        peers/PeerDialer.h
-        peers/PeerDialer.cpp
         storage/Storage.h
         storage/Storage.cpp
         raft/Raft.h

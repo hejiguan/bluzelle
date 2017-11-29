@@ -46,9 +46,9 @@ void PeerSession::on_read(
     std::stringstream ss;
     ss << boost::beast::buffers(buffer_.data());
 
-    std::string response;
+    std::string response, request = ss.str();
     if (handler_ != nullptr)
-        response = handler_(ss.str());
+        response = handler_(request);
 
     ws_.async_write(
             boost::asio::buffer(response),

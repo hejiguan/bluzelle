@@ -42,7 +42,10 @@ int main(int argc, char *argv[]) {
     info.config_ = options.get_config();
     info.name_ = "Node_running_on_port_" + boost::lexical_cast<string>(port);
 
-    Node this_node(info);
+    const uint io_service_threads = 12; // Number of threads to run I/O service on.
+    boost::asio::io_service ios{io_service_threads}; // I/O service to use.
+
+    Node this_node(ios, info);
     try
         {
         this_node.run();

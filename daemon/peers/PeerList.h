@@ -1,22 +1,20 @@
 #ifndef BLUZELLE_PEERLIST_H
 #define BLUZELLE_PEERLIST_H
 
-#include<vector>
+#include <vector>
 
 using std::vector;
 
+#include "Peer.h"
 #include "NodeInfo.hpp"
 
-class PeerList {
+class PeerList : public vector<Peer>{
 private:
-    vector<NodeInfo> peers;
-
     NodeInfo& find_by_endpoint() const;
 
     NodeInfo& find_by_address() const;
 
     NodeInfo& find_by_name() const;
-
 };
 
 #endif //BLUZELLE_PEERLIST_H

@@ -12,11 +12,13 @@ using std::string;
 
 class Node {
 private:
-    PeerServer server_; // Serves inbound connections.
+    boost::asio::io_service& ios_;
+
     Raft raft_; // RAFT protocol state machine.
+    PeerServer server_; // Serves inbound connections.
 
 public:
-    Node(const NodeInfo& i);
+    Node(boost::asio::io_service& ios, const NodeInfo& i);
 
     void run();
 
