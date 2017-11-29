@@ -52,11 +52,12 @@ void PeerSession::on_read(
 
     ws_.async_write(
             boost::asio::buffer(response),
-            std::bind(
-                    &PeerSession::on_write,
-                    shared_from_this(),
-                    std::placeholders::_1,
-                    std::placeholders::_2));
+            strand_.wrap(
+                    std::bind(
+                            &PeerSession::on_write,
+                            shared_from_this(),
+                            std::placeholders::_1,
+                            std::placeholders::_2)));
 }
 
 void PeerSession::on_write(
@@ -72,6 +73,17 @@ void PeerSession::on_write(
     do_read();
 }
 
-void PeerSession::set_request_handler(std::function<string(const string&)> h) {
-    handler_ = h;
+void PeerSession::set_request_handler(std::function<string(const string&)> request_handler) {
+    handler_ = request_handler;
+}
+
+void PeerSession::write_async(const string& request) {
+    ws_.async_write(
+            boost::asio::buffer(request),
+            strand_.wrap(
+                    std::bind(
+                            &PeerSession::on_write,
+                            shared_from_this(),
+                            std::placeholders::_1,
+                            std::placeholders::_2)));
 }

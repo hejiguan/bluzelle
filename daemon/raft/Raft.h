@@ -20,7 +20,7 @@ enum class LogRecordStatus {
 
 class Raft {
 private:
-    static const uint raft_default_heartbeat_interval_milliseconds = 1050; // 50 millisec.
+    static const uint raft_default_heartbeat_interval_milliseconds = 5050; // 50 millisec.
 
     boost::asio::io_service& ios_;
 

@@ -9,12 +9,14 @@ using std::vector;
 #include "NodeInfo.hpp"
 
 class PeerList : public vector<Peer>{
-private:
-    NodeInfo& find_by_endpoint() const;
+public:
+    PeerList();
+
+    /*NodeInfo& find_by_endpoint() const;
 
     NodeInfo& find_by_address() const;
 
-    NodeInfo& find_by_name() const;
+    NodeInfo& find_by_name() const;*/
 };
 
 #endif //BLUZELLE_PEERLIST_H

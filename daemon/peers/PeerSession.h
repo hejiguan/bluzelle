@@ -23,8 +23,7 @@ public:
 
     void run();
 
-
-    void set_request_handler(std::function<string(const string&)> h);
+    void set_request_handler(std::function<string(const string&)> request_handler);
 
     void on_accept(boost::system::error_code ec);
 
@@ -35,6 +34,8 @@ public:
 
     void on_write(boost::system::error_code ec,
                   std::size_t bytes_transferred);
+
+    void write_async(const string& message);
 };
 
 #endif //BLUZELLE_PEERSESSION_H

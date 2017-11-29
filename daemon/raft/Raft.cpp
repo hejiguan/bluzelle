@@ -31,14 +31,14 @@ void Raft::run() {
 
     if (info_.state_ == State::leader)
         {
-        std::cout << "I am leader" << std::endl;
+        std::cout << "\n\tI am leader" << std::endl;
         heartbeat_timer_.async_wait(
                 boost::bind(&Raft::heartbeat,
                             this)); // start heartbeat.
         }
     else
         {
-        std::cout << "I am follower" << std::endl;
+        std::cout << "\n\tI am follower" << std::endl;
         }
 
     // How CRUD works? Am I writing to any node and it sends it to leader or I can write to leader only.
@@ -66,6 +66,14 @@ void Raft::start_leader_election() {
 }
 
 void Raft::heartbeat() {
+    std::cout << "♥" << std::endl;
+
+    const string heartbeat_message("{\"raft\":\"append-entries\", \"data\":{}}");
+    for (auto& p : peers_)
+        {
+        p.send_request(ios_, heartbeat_message);
+        }
+
     // Re-arm timer.
     heartbeat_timer_.expires_at(
             heartbeat_timer_.expires_at() +
@@ -73,16 +81,6 @@ void Raft::heartbeat() {
     heartbeat_timer_.async_wait(
             boost::bind(&Raft::heartbeat,
                         this));
-
-    std::cout << "♥" << std::endl;
-    /*for (auto& p : peers_)
-        {
-        p.send_request(ios_, "{\"raft\":\"append-entries\", \"data\":{}}"); // Send heartbeat message.
-        }*/
-
-    //re-schedule.
-    //heartbeat_timer_.expires_at(heartbeat_timer_.expires_at() + boost::posix_time::seconds(1));
-    //heartbeat_timer_.async_wait(boost::bind(heartbeat));
 }
 
 string Raft::handle_request(const string &req) {

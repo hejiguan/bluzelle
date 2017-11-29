@@ -29,11 +29,10 @@ public:
 
     boost::posix_time::posix_time_system last_contacted_;
 
-    NodeInfo(const string& host, // IP address or name.
-             ushort port, // Port.
+    NodeInfo(const string& host,    // IP address or name.
+             ushort port,           // Port.
              const string& address, // Etherium address
-             bool leader,
-             const string& name)
+             const string& name)    // Node name (description).
     : host_(host), port_(port), address_(address), state_(State::unknown), name_(name) {}
 
     NodeInfo() {
