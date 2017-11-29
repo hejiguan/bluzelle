@@ -14,7 +14,7 @@ Node::Node(boost::asio::io_service& ios, const NodeInfo& i)
                   1,
                   // Raft::handle_request() is processing JSON.
                   std::bind(&Raft::handle_request,
-                            raft_,
+                            &raft_,
                             std::placeholders::_1)) {
 
 }

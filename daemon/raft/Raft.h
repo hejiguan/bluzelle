@@ -28,8 +28,7 @@ private:
     NodeInfo info_; // This node info.
     Storage storage_; // Where the RAFTs log is replicated.
 
-    //boost::asio::deadline_timer heartbeat_timer_;
-    //std::thread heartbeat_timer_io_thread_;
+    boost::asio::deadline_timer heartbeat_timer_;
 
     void start_leader_election();
     void heartbeat();

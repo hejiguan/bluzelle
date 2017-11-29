@@ -12,7 +12,7 @@ PeerServer::PeerServer(boost::asio::io_service& ios,
   ip_address_(boost::asio::ip::address::from_string(ip_address)),
     port_(port),
     threads_(threads),
-    request_handler_(request_handler){
+    request_handler_(request_handler) {
 
 }
 

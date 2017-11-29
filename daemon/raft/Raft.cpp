@@ -4,12 +4,12 @@
 
 #include "Raft.h"
 
-Raft::Raft(boost::asio::io_service& ios, const NodeInfo& i)
+Raft::Raft(boost::asio::io_service &ios, const NodeInfo &i)
         : ios_(ios),
           info_(i),
-          storage_("./storage_" + info_.name_ + ".txt")/*,
-          heartbeat_timer_(ios_, boost::posix_time::milliseconds(raft_default_heartbeat_interval_milliseconds))*/
-{
+          storage_("./storage_" + info_.name_ + ".txt"),
+          heartbeat_timer_(ios_,
+                           boost::posix_time::milliseconds(raft_default_heartbeat_interval_milliseconds)) {
 
 }
 
@@ -32,22 +32,14 @@ void Raft::run() {
     if (info_.state_ == State::leader)
         {
         std::cout << "I am leader" << std::endl;
-
-        // start heartbeat.
-        //heartbeat_timer_.async_wait(boost::bind(&Raft::heartbeat));
-        /*std::thread heartbeat_timer_io_thread(
-                [](){
-                    run();
-                    }
-        );
-        heartbeat_timer_io_thread.detach();*/
+        heartbeat_timer_.async_wait(
+                boost::bind(&Raft::heartbeat,
+                            this)); // start heartbeat.
         }
     else
         {
         std::cout << "I am follower" << std::endl;
         }
-
-
 
     // How CRUD works? Am I writing to any node and it sends it to leader or I can write to leader only.
     // All goes through leader. Leader receives log entry and writes it locally, its state is uncommited.
@@ -74,17 +66,26 @@ void Raft::start_leader_election() {
 }
 
 void Raft::heartbeat() {
-    for (auto& p : peers_)
+    // Re-arm timer.
+    heartbeat_timer_.expires_at(
+            heartbeat_timer_.expires_at() +
+            boost::posix_time::milliseconds(raft_default_heartbeat_interval_milliseconds));
+    heartbeat_timer_.async_wait(
+            boost::bind(&Raft::heartbeat,
+                        this));
+
+    std::cout << "♥" << std::endl;
+    /*for (auto& p : peers_)
         {
         p.send_request(ios_, "{\"raft\":\"append-entries\", \"data\":{}}"); // Send heartbeat message.
-        }
+        }*/
 
     //re-schedule.
     //heartbeat_timer_.expires_at(heartbeat_timer_.expires_at() + boost::posix_time::seconds(1));
     //heartbeat_timer_.async_wait(boost::bind(heartbeat));
 }
 
-string Raft::handle_request(const string& req) {
+string Raft::handle_request(const string &req) {
     // [todo] command factory
     auto cmd = from_json_string(req);
     // [todo] Every message stored in message log to be send to GUI later.
@@ -132,7 +133,7 @@ string Raft::handle_request(const string& req) {
     return response;
 }
 
-boost::property_tree::ptree Raft::from_json_string(const string& s) const {
+boost::property_tree::ptree Raft::from_json_string(const string &s) const {
     std::stringstream ss;
     ss << s;
 
@@ -141,9 +142,9 @@ boost::property_tree::ptree Raft::from_json_string(const string& s) const {
         {
         boost::property_tree::read_json(ss, json);
         }
-    catch (boost::property_tree::json_parser_error& ex)
+    catch (boost::property_tree::json_parser_error &ex)
         {
-        std::cout << "Raft::from_json_string() threw '" << ex.what() << "' parsing "<< std::endl;
+        std::cout << "Raft::from_json_string() threw '" << ex.what() << "' parsing " << std::endl;
         std::cout << s << std::endl;
         }
 
