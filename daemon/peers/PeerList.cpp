@@ -5,7 +5,7 @@
 PeerList::PeerList() {
     // Hardcoded list of peers.
     ushort leader_port =  58000; // One node starts on port 58000 and become leader.
-    for (int i = 1; i <= 5; ++i) // Create 5 more followers.
+    for (int i = 1; i <= 1; ++i) // Create 5 more followers.
         {
         NodeInfo n;
         n.port_+= i;

@@ -22,6 +22,7 @@ void PeerSession::on_accept(boost::system::error_code ec) {
 }
 
 void PeerSession::do_read() {
+    buffer_.consume(buffer_.size());
     ws_.async_read(
             buffer_,
             strand_.wrap(std::bind(
@@ -46,6 +47,8 @@ void PeerSession::on_read(
     std::stringstream ss;
     ss << boost::beast::buffers(buffer_.data());
 
+    buffer_.consume(buffer_.size());
+
     std::string response, request = ss.str();
     if (handler_ != nullptr)
         response = handler_(request);
@@ -67,8 +70,6 @@ void PeerSession::on_write(
 
     if (ec)
         return fail(ec, "PeerSession::on_write");
-
-    buffer_.consume(buffer_.size());
 
     do_read();
 }

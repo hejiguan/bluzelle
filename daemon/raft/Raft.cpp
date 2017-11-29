@@ -55,7 +55,7 @@ void Raft::start_leader_election() {
     // Election_Timeout -> time to wait before starting new election (become a candidate)
     // Random in 150-300 ms interval
 
-    // After Eection_Timeout follower becomes candidate and start election term, votes for itself and sends
+    // After Election_Timeout follower becomes candidate and start election term, votes for itself and sends
     // Request_Vote messages to other nodes.
     // If node hasn't voted for itself or didn't reply to others node Request_Vote it votes "YES" otherwise "NO"
     // An resets election timeout (won't start new election).
@@ -75,12 +75,12 @@ void Raft::heartbeat() {
         }
 
     // Re-arm timer.
-    heartbeat_timer_.expires_at(
+    /*heartbeat_timer_.expires_at(
             heartbeat_timer_.expires_at() +
             boost::posix_time::milliseconds(raft_default_heartbeat_interval_milliseconds));
     heartbeat_timer_.async_wait(
             boost::bind(&Raft::heartbeat,
-                        this));
+                        this));*/
 }
 
 string Raft::handle_request(const string &req) {

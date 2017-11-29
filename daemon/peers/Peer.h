@@ -3,7 +3,7 @@
 
 #include <memory>
 
-using std::weak_ptr;
+using std::shared_ptr;
 
 #include "NodeInfo.hpp"
 #include "PeerSession.h"
@@ -11,7 +11,7 @@ using std::weak_ptr;
 class Peer {
 public:
     NodeInfo info_; // This node info.
-    weak_ptr<PeerSession> session_; // Corresponding session.
+    shared_ptr<PeerSession> session_; // Corresponding session.
 
     Peer(NodeInfo i);
 

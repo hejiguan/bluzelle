@@ -2,6 +2,8 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/lexical_cast.hpp>
 
+#include <boost/beast/websocket.hpp>
+
 #include "Peer.h"
 
 using std::shared_ptr;
@@ -10,23 +12,20 @@ Peer::Peer(NodeInfo i) : info_(std::move(i)){
 
 }
 
-string Peer::send_request(boost::asio::io_service& io, const string& req) {
-    auto session = session_.lock();
-
-    if (session == nullptr) // Check if we don't have a session.
+string Peer::send_request(boost::asio::io_service& ios, const string& req) {
+    if (session_ == nullptr) // Check if we don't have a session.
         {
-        boost::asio::ip::tcp::resolver resolver(io);
-        boost::asio::ip::tcp::socket socket(io);
+        boost::asio::ip::tcp::resolver resolver(ios);
+        boost::beast::websocket::stream<boost::asio::ip::tcp::socket> ws{ios};
 
         try
             {
+            // Resolve, connect, handshake.
             auto lookup = resolver.resolve({info_.host_, boost::lexical_cast<string>(info_.port_)});
+            boost::asio::connect(ws.next_layer(), lookup);
+            ws.handshake(info_.host_, "/");
 
-            boost::asio::connect(socket, lookup);
-
-            auto s = std::make_shared<PeerSession>(std::move(socket));; // Store it for future use.
-            s->run();
-            session_ = s;
+            session_ = std::make_shared<PeerSession>(std::move(ws.next_layer())); // Store it for future use.
             }
         catch (std::exception& ex)
             {
@@ -35,13 +34,11 @@ string Peer::send_request(boost::asio::io_service& io, const string& req) {
                       << boost::lexical_cast<string>(info_.port_) << " '"
                       << ex.what() << "'" << std::endl;
             }
-
-        session = session_.lock();
         }
 
-    if (session != nullptr) // Check again in case we just created a session.
+    if (session_ != nullptr) // Check again in case we just created a session.
         {
-        session->write_async(req);
+        session_->write_async(req);
         }
 }
 
