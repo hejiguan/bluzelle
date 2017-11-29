@@ -77,8 +77,7 @@ set(SOURCE_FILES
         Node.h
         Node.cpp
         main.cpp
-        )
-        )
+        MessageInfo.hpp)
 add_executable(the_db ${SOURCE_FILES})
 target_link_libraries(the_db ${Boost_LIBRARIES})
 if(UNIX AND NOT APPLE)

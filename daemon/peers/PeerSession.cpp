@@ -1,11 +1,6 @@
 #include "PeerSession.h"
 
-//#include <boost/date_time/posix_time/posix_time.hpp>
-
-
-void fail(boost::system::error_code ec, char const *what); /*{
-    std::cerr << what << ": " << ec.message() << "\n";
-}*/
+void fail(boost::system::error_code ec, char const *what);
 
 PeerSession::PeerSession(boost::asio::ip::tcp::socket socket)
         : ws_(std::move(socket)), strand_(ws_.get_io_service()) {
@@ -21,7 +16,7 @@ void PeerSession::run() {
 
 void PeerSession::on_accept(boost::system::error_code ec) {
     if (ec)
-        return fail(ec, "accept");
+        return fail(ec, "PeerSession::on_accept");
 
     do_read();
 }
@@ -46,12 +41,14 @@ void PeerSession::on_read(
         return;
 
     if (ec)
-        fail(ec, "read");
+        fail(ec, "PeerSession::on_read");
 
     std::stringstream ss;
     ss << boost::beast::buffers(buffer_.data());
 
-    std::string response = ss.str(); // Echo it back for now.
+    std::string response;
+    if (handler_ != nullptr)
+        response = handler_(ss.str());
 
     ws_.async_write(
             boost::asio::buffer(response),
@@ -68,9 +65,13 @@ void PeerSession::on_write(
     boost::ignore_unused(bytes_transferred);
 
     if (ec)
-        return fail(ec, "write");
+        return fail(ec, "PeerSession::on_write");
 
     buffer_.consume(buffer_.size());
 
     do_read();
+}
+
+void PeerSession::set_request_handler(std::function<string(const string&)> h) {
+    handler_ = h;
 }

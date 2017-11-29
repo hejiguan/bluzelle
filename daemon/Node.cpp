@@ -5,29 +5,35 @@
 #include "Node.h"
 
 
-Node::Node(const string &address,
-           ushort port, const string &configpath)
-        : server_("127.0.0.1", port, 1),
-          storage_("./storage_" + boost::lexical_cast<string>(port) + ".txt") {
-    //info_ = NodeInfo::this_node();
+Node::Node(const NodeInfo& i)
+        : raft_(i),
+          server_("127.0.0.1",
+                  i.port_,
+                  1,
+                  // Raft::handle_request() is processing JSON.
+                  std::bind(&Raft::handle_request,
+                            raft_,
+                            std::placeholders::_1)) {
+
 }
 
 void Node::run() {
+    raft_.run(); // Start RAFT.
     server_.run(); // Start accepting connections.
-    // Wait random amount of time 1-10 seconds.
-
-    /* // load list of known nodes from file.
-     * // Start RAFT
-     * // Do we have a leader?
-     * // Start election process.
-     * //   Any takers: vote YES
-     * //   Endorse itself, wait for votes to come, assume leader position.
-     * */
-
-    // PeerServer know about RAFT, RAFT doesn't know about PS.
-    // Raft knows about PeerDialer.
 
     std::cout << "Press a key to stop" << std::endl;
     getchar();
     std::cout << "Stopping..." << std::endl;
+}
+
+vector<NodeInfo> Node::get_peers() const {
+    vector<NodeInfo> v;
+    // [todo] populate nodes vector.
+    return v;
+}
+
+vector<MessageInfo> Node::get_messages() const {
+    vector<MessageInfo> v;
+    // [todo] populate messages vector.
+    return v;
 }

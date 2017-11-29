@@ -6,29 +6,22 @@
 using std::string;
 
 #include "PeerServer.h"
-#include "PeerList.h"
 #include "NodeInfo.hpp"
-#include "Storage.h"
-#include "PeerDialer.h"
+#include "MessageInfo.hpp"
 #include "Raft.h"
 
 class Node {
 private:
     PeerServer server_; // Serves inbound connections.
-    PeerDialer dialer_; // Creates outbound connections.
-
-    NodeInfo info_; // This node info.
-
-    PeerList peers_; // List of known peers, connected or not, some came from file some are just connected.
-
-    Storage storage_; // Where the RAFTs log is replicated.
-
     Raft raft_; // RAFT protocol state machine.
 
 public:
-    Node(const string& address, ushort port, const string& configpath);
+    Node(const NodeInfo& i);
 
     void run();
+
+    vector<NodeInfo> get_peers() const; // returns list of all known peers connected or not.
+    vector<MessageInfo> get_messages() const; // returns list of messages sent by this node, since timestamp.
 };
 
 #endif //BLUZELLE_NODE_H

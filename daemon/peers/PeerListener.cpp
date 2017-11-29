@@ -4,8 +4,9 @@
 void fail(boost::system::error_code ec, char const *what); // In PeerSession.cpp
 
 PeerListener::PeerListener(boost::asio::io_service &ios,
-                           boost::asio::ip::tcp::endpoint endpoint)
-        : acceptor_(ios), socket_(ios) {
+                           boost::asio::ip::tcp::endpoint endpoint,
+                           std::function<string(const string&)> handler)
+        : acceptor_(ios), socket_(ios), request_handler_(handler) {
     boost::system::error_code ec;
 
     // Open the acceptor
@@ -59,6 +60,7 @@ void PeerListener::on_accept(boost::system::error_code ec) {
         {
         // Create the session and run it
         auto s = std::make_shared<PeerSession>(std::move(socket_));
+        s->set_request_handler(request_handler_);
         s->run();
         //sessions_.push_back(s);
         }

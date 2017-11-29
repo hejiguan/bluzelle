@@ -14,13 +14,15 @@ private:
     boost::asio::ip::address ip_address_;
     unsigned short port_;
     size_t threads_;
+    std::function<string(const string&)> request_handler_;
 
     bool running_ = false;
 
 public:
     PeerServer(const string &ip_address,
                unsigned short port,
-               unsigned short threads);
+               unsigned short threads,
+               std::function<string(const string&)> request_handler);
 
     void run();
 

@@ -36,7 +36,13 @@ int main(int argc, char *argv[]) {
               << " config path: " << options.get_config() << std::endl;
 
 
-    Node this_node(address, port, "./known_nodes");
+    NodeInfo info = NodeInfo::this_node();
+    info.port_ = port;
+    info.address_ = address;
+    info.config_ = options.get_config();
+    info.name_ = "Node_running_on_port_" + boost::lexical_cast<string>(port);
+
+    Node this_node(info);
     try
         {
         this_node.run();
