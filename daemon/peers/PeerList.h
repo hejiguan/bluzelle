@@ -10,7 +10,7 @@ using std::vector;
 
 class PeerList : public vector<Peer>{
 public:
-    PeerList();
+    PeerList(boost::asio::io_service& ios);
 
     /*NodeInfo& find_by_endpoint() const;
 

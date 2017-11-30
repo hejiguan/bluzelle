@@ -59,7 +59,8 @@ void PeerListener::on_accept(boost::system::error_code ec) {
     else
         {
         // Create the session and run it
-        auto s = std::make_shared<PeerSession>(std::move(socket_));
+        auto s = std::make_shared<PeerSession>(
+                boost::beast::websocket::stream<boost::asio::ip::tcp::socket>(std::move(socket_)));
         s->set_request_handler(request_handler_);
         s->run();
         //sessions_.push_back(s);

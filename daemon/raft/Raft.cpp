@@ -6,6 +6,7 @@
 
 Raft::Raft(boost::asio::io_service &ios, const NodeInfo &i)
         : ios_(ios),
+          peers_(ios_),
           info_(i),
           storage_("./storage_" + info_.name_ + ".txt"),
           heartbeat_timer_(ios_,
@@ -23,6 +24,10 @@ void Raft::run() {
     if (info_.port_ % 10 == 0) // This node is leader. [todo] replace with actual leader election.
         {
         info_.state_ = State::leader;
+        }
+    else
+        {
+        info_.state_ = State::follower;
         }
 
     // Check if any connected node is a leader
@@ -66,21 +71,24 @@ void Raft::start_leader_election() {
 }
 
 void Raft::heartbeat() {
-    std::cout << "♥" << std::endl;
+    std::cout << "♥";
 
     const string heartbeat_message("{\"raft\":\"append-entries\", \"data\":{}}");
     for (auto& p : peers_)
         {
-        p.send_request(ios_, heartbeat_message);
+        p.send_request(heartbeat_message);
+        std::cout << ".";
         }
 
+    std::cout << std::endl;
+
     // Re-arm timer.
-    /*heartbeat_timer_.expires_at(
+    heartbeat_timer_.expires_at(
             heartbeat_timer_.expires_at() +
             boost::posix_time::milliseconds(raft_default_heartbeat_interval_milliseconds));
     heartbeat_timer_.async_wait(
             boost::bind(&Raft::heartbeat,
-                        this));*/
+                        this));
 }
 
 string Raft::handle_request(const string &req) {
