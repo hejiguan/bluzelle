@@ -3,8 +3,10 @@
 
 #include <string>
 #include <thread>
+#include <queue>
 
 using std::string;
+using std::queue;
 
 #include <boost/property_tree/ptree.hpp>
 
@@ -27,6 +29,7 @@ private:
     PeerList peers_; // List of known peers, connected or not, some came from file some are just connected.
     NodeInfo info_; // This node info.
     Storage storage_; // Where the RAFTs log is replicated.
+    queue<string, string> crud_queue_;
 
     boost::asio::deadline_timer heartbeat_timer_;
 

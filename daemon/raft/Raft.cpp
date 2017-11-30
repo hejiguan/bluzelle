@@ -1,8 +1,11 @@
 #include <iostream>
 
 #include <boost/property_tree/json_parser.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include "Raft.h"
+
+static uint64_t s_transaction_id = 0;
 
 Raft::Raft(boost::asio::io_service &ios, const NodeInfo &i)
         : ios_(ios),
@@ -101,9 +104,17 @@ string Raft::handle_request(const string &req) {
     if (message == "append-entries")
         {
         auto payload = cmd.get<string>("data");
-        if (!payload.empty())
+        if (!payload.empty()) // CRUD transaction.
             {
-            // CRUD transaction.
+            if (info_.state_ == State::leader)
+                {
+                ++ s_transaction_id;
+                crud_queue_.push(boost::lexical_cast<string>(s_transaction_id), req);
+                }
+            else
+                { // All CRUD requests must go through the leader. Ignore
+                std::cout << "Ignoring. Not a leader." << std::endl;
+                }
             }
         else
             {
