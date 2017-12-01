@@ -1,4 +1,5 @@
 #include <iostream>
+#include <utility>
 
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/lexical_cast.hpp>
@@ -76,10 +77,17 @@ void Raft::start_leader_election() {
 void Raft::heartbeat() {
     std::cout << "♥";
 
-    const string heartbeat_message("{\"raft\":\"append-entries\", \"data\":{}}");
     for (auto& p : peers_)
         {
-        p.send_request(heartbeat_message);
+        if (crud_queue_.empty())
+            p.send_request(s_heartbeat_message);
+        else
+            {
+            auto m = crud_queue_.front();
+            p.send_request(m.second);
+            crud_queue_.pop();
+            }
+
         std::cout << ".";
         }
 
@@ -103,22 +111,20 @@ string Raft::handle_request(const string &req) {
 
     if (message == "append-entries")
         {
-        auto payload = cmd.get<string>("data");
-        if (!payload.empty()) // CRUD transaction.
+        auto data = cmd.get_child("data.");
+        if (!data.empty()) // CRUD transaction.
             {
             if (info_.state_ == State::leader)
                 {
                 ++ s_transaction_id;
-                crud_queue_.push(boost::lexical_cast<string>(s_transaction_id), req);
+                crud_queue_.push(std::make_pair<const string, const string>(
+                        boost::lexical_cast<string>(s_transaction_id), string(req)));
                 }
-            else
-                { // All CRUD requests must go through the leader. Ignore
-                std::cout << "Ignoring. Not a leader." << std::endl;
-                }
+            // All CRUD requests must go through the leader. [todo] Authenticate request came from leader.
+            response = handle_storage_request(req);
             }
         else
-            {
-            // Heartbeat message. Print it.
+            { // Heartbeat message.
             std::cout << "♥ :" << req << std::endl;
             }
         }
@@ -144,9 +150,14 @@ string Raft::handle_request(const string &req) {
     // {"raft":"append-entries", "data":{}} -> heartbeat, no response needed.
     // {"raft":"append-entries", "data":{"transaction-id":""}}
 
-    // {"raft":"append-entries", "data":{"command":"create|read|update|delete" "key":"key", "value":"value", "transaction-id":"id-of-transaction"}} -> CRUD command, id of the transaction on leader node.
-    // {"raft":"append-entries", "data":{"transaction-id":"id-of-transaction"}}
+    // {"raft":"append-entries", "transaction-id":"123", "data":{"command":"create|read|update|delete" "key":"key", "value":"value"}} -> CRUD command, id of the transaction on leader node.
+    // {"raft":"append-entries", "data":{"command":"create|read|update|delete" "key":"key", "value":"value"}}
 
+
+    // From API to leader:
+    // {"raft":"append-entries", "data":{"command":"create", "key":"key-one", "value":"value-one"}}
+    // From leader to followers
+    // {"raft":"append-entries", "transaction-id":"123", "data":{"command":"create", "key":"key-one", "value":"value-one"}}
     return response;
 }
 
@@ -171,5 +182,60 @@ boost::property_tree::ptree Raft::from_json_string(const string &s) const {
 
 string Raft::to_json_string(boost::property_tree::ptree j) const {
     return "";
+}
+
+string Raft::handle_storage_request(const string& req) {
+    auto m = from_json_string(req);
+    if (m.get<string>("raft") != "append-entries")
+        {
+        return error_message(m, "Not a CRUD command. Ignored.");
+        }
+
+    if (m.get<string>("transaction-id").empty()) // All CRUD requests must come from leader and have signed transaction id.
+        {
+        return error_message(m, "CRUD requst is not originated from leader. Ignored");
+        }
+
+    auto data  = m.get_child("data.");
+
+    string crud = data.get<string>("command");
+    string k = data.get<string>("key");
+    string v = data.get<string>("value");
+
+    if (crud == "create")
+        {
+        storage_.create(k, v);
+        return error_message(m, "ok");
+        }
+    else if (crud == "read")
+        {
+        v = storage_.read(k);
+        if (v.empty())
+            return error_message(m, "Value is missing");
+        else
+            {
+            data.put("value", v);
+            return to_json_string(m);
+            }
+        }
+    else if (crud == "update")
+        {
+        storage_.update(k,v);
+        return error_message(m, "ok");
+        }
+    else if (crud == "delete")
+        {
+        storage_.remove(k);
+        return error_message(m, "ok");
+        }
+
+    return error_message(m, "Unsupported CRUD command");
+}
+
+string Raft::error_message(boost::property_tree::ptree& req, const string& error) {
+    boost::property_tree::ptree msg;
+    msg.put("raft", req.get<string>("raft"));
+    msg.put("error", error);
+    return to_json_string(msg);
 }
 
