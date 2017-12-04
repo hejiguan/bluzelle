@@ -45,10 +45,7 @@ include_directories(
         storage
         raft
 )
-include_directories(websockets command_line_options)
 set(SOURCE_FILES
-        command_line_options/CommandLineOptions.h
-        command_line_options/CommandLineOptions.cpp
         main.cpp
         websockets/Listener.h
         websockets/Session.cpp
@@ -97,8 +94,7 @@ set(SOURCE_FILES
         websockets/WebSocketServer_tests.cpp
         command_line_options/CommandLineOptions.h
         command_line_options/CommandLineOptions.cpp
-        command_line_options/command_line_options_test.cpp
-        test.cpp)
+        command_line_options/command_line_options_test.cpp)
 add_executable(the_db_test ${SOURCE_FILES})
 target_link_libraries(the_db_test ${Boost_LIBRARIES})
 if(UNIX AND NOT APPLE)
