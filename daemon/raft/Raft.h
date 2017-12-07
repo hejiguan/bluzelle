@@ -15,6 +15,7 @@ using std::pair;
 #include "PeerList.h"
 #include "NodeInfo.hpp"
 #include "Storage.h"
+#include "CommandFactory.h"
 
 enum class LogRecordStatus {
     unknown,
@@ -23,7 +24,7 @@ enum class LogRecordStatus {
 };
 
 class Raft {
-    const string s_heartbeat_message = "{\"raft\":\"append-entries\", \"data\":{}}";
+    const string s_heartbeat_message = "{\"raft\":\"beep\"}";
 
 private:
     static const uint raft_default_heartbeat_interval_milliseconds = 1050; // 50 millisec.
@@ -35,21 +36,18 @@ private:
     Storage storage_; // Where the RAFTs log is replicated.
     queue<pair<const string, const string>> crud_queue_;
 
+    CommandFactory command_factory_;
+
     boost::asio::deadline_timer heartbeat_timer_;
-
-    void start_leader_election();
     void heartbeat();
-
-    string handle_storage_request(const string& req);
 
     boost::property_tree::ptree from_json_string(const string& s) const;
     string to_json_string(boost::property_tree::ptree j) const;
-    string error_message(boost::property_tree::ptree& req, const string& error);
 
+    string translate_message(const string& m) const;
 public:
     Raft(boost::asio::io_service& io, const NodeInfo& info); // Node name, other params will be added.
     void run();
-
     string handle_request(const string& req);
 };
 

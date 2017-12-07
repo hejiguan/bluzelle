@@ -72,7 +72,7 @@ set(SOURCE_FILES
         Node.h
         Node.cpp
         main.cpp
-        MessageInfo.hpp)
+        MessageInfo.hpp raft/CommandFactory.h raft/Command.hpp raft/CrudCreateCommand.h raft/CrudCreateCommand.cpp raft/RaftHeartbeatCommand.h raft/RaftHeartbeatCommand.cpp raft/CrudReadCommand.h raft/CrudReadCommand.cpp raft/CommandFactory.cpp)
 add_executable(the_db ${SOURCE_FILES})
 target_link_libraries(the_db ${Boost_LIBRARIES})
 if(UNIX AND NOT APPLE)

@@ -1,6 +1,7 @@
 #include <iostream>
 #include <utility>
 #include <thread>
+#include <sstream>
 
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/lexical_cast.hpp>
@@ -14,18 +15,14 @@ Raft::Raft(boost::asio::io_service &ios, const NodeInfo &i)
           peers_(ios_),
           info_(i),
           storage_("./storage_" + info_.name_ + ".txt"),
+          command_factory_(info_.state_, storage_),
           heartbeat_timer_(ios_,
                            boost::posix_time::milliseconds(raft_default_heartbeat_interval_milliseconds)) {
 
 }
 
 void Raft::run() {
-    // Read peers file
-    // Wait for 1-10 seconds at random.
-    // Do I have a leader to talk?
-
     // Leader is hardcoded: node with port ending with '0' is always a leader.
-
     if (info_.port_ % 10 == 0) // This node is leader. [todo] replace with actual leader election.
         {
         info_.state_ = State::leader;
@@ -34,10 +31,6 @@ void Raft::run() {
         {
         info_.state_ = State::follower;
         }
-
-    // Check if any connected node is a leader
-    // reach out to all the rest of known nodes and ask them if one of them is a leader.
-    // Two lists: known nodes and connected nodes (these have sessions)
 
     if (info_.state_ == State::leader)
         {
@@ -57,7 +50,7 @@ void Raft::run() {
     // from majority the state changed to 'committed'. Then leader notify followers that entry is committed.
 }
 
-void Raft::start_leader_election() {
+//void Raft::start_leader_election() {
 /*
  * If node haven't heard from leader it can start election.
  * Change state to State::candidate and request votes
@@ -73,7 +66,7 @@ void Raft::start_leader_election() {
     // The leader sends Append_Entry messages to followers in Heartbeat_Timeout intervals. Followers respond
     // If follower don't receive Append_Entry in time alotted new election term starts.
     // Handle Split_Vote
-}
+//}
 
 void Raft::heartbeat() {
     std::cout << "♥ ";
@@ -91,7 +84,7 @@ void Raft::heartbeat() {
         auto m = crud_queue_.front();
         for (auto &p : peers_)
             {
-            p.send_request(m.second);
+            //p.send_request(m.second);
             std::cout << ".";
             }
         crud_queue_.pop();
@@ -108,51 +101,21 @@ void Raft::heartbeat() {
 }
 
 string Raft::handle_request(const string &req) {
-    auto cmd = from_json_string(req);
+    auto pt = from_json_string(req);
 
-    string response;
-    auto message = cmd.get<string>("raft");
-
-
-    if (message == "append-entries")
+    unique_ptr<Command> command = command_factory_.get_command(pt);
+    if (info_.state_ == State::leader) // If I am leader CRUD commands need to be sent to followers.
         {
-        auto data = cmd.get_child("data.");
-        if (!data.empty()) // CRUD transaction.
-            {
-            if (info_.state_ == State::leader)
-                {
-                ++ s_transaction_id;
-                crud_queue_.push(std::make_pair<const string, const string>(
-                        boost::lexical_cast<string>(s_transaction_id), string(req)));
-                }
-            // All CRUD requests must go through the leader. [todo] Authenticate request that came from leader.
-            response = handle_storage_request(req);
-            }
-        else
-            { // Heartbeat message.
-            std::cout << "♥ :" << req << std::endl;
-            }
+        ++ s_transaction_id;
+        crud_queue_.push(std::make_pair<const string, const string>(
+                boost::lexical_cast<string>(s_transaction_id), translate_message(req)));
         }
 
-    // Who_is_the_Leader
-    // {"raft":"who_is_the_leader"} ->
-    // {"raft":"who_is_the_leader", "leader":"192.168.1.1"} <-
-
-    // {"raft":"request-vote"} ->
-    // {"raft":"request-vote", "vote":"yes"} <-
-
-    // {"raft":"append-entries", "data":{}} -> heartbeat, no response needed.
-    // {"raft":"append-entries", "data":{"transaction-id":""}}
-
-    // {"raft":"append-entries", "transaction-id":"123", "data":{"command":"create|read|update|delete" "key":"key", "value":"value"}} -> CRUD command, id of the transaction on leader node.
-    // {"raft":"append-entries", "data":{"command":"create|read|update|delete" "key":"key", "value":"value"}}
-
-
-    // From API to leader:
-    // {"raft":"append-entries", "transaction-id":"123", "data":{"command":"create", "key":"key-one", "value":"value-one"}}
-
-    // From leader to followers
-    // {"raft":"append-entries", "transaction-id":"123", "data":{"command":"create", "key":"key-one", "value":"value-one"}}
+    string response;
+    if (command != nullptr)
+        response = to_json_string(command->operator()());
+    else
+        std::cout << "Unsupported command: '" << req << "'" << std::endl;
     return response;
 }
 
@@ -175,11 +138,33 @@ boost::property_tree::ptree Raft::from_json_string(const string &s) const {
     return json;
 }
 
-string Raft::to_json_string(boost::property_tree::ptree j) const {
-    return "";
+string Raft::to_json_string(boost::property_tree::ptree pt) const {
+    try
+        {
+        std::stringstream ss;
+        boost::property_tree::write_json(ss, pt);
+        return ss.str();
+        }
+    catch (boost::property_tree::json_parser_error &ex)
+        {
+        std::cout << "Raft::to_json_string() threw '" << ex.what() << std::endl;
+        }
+
+    return string();
 }
 
-string Raft::handle_storage_request(const string& req) {
+// From API to CRUD (from API<->leader to leader<->followers).
+string Raft::translate_message(const string& s) const {
+    auto m = s;
+    size_t start_pos = m.find("bzn-api");
+    if (start_pos != std::string::npos)
+        {
+        m.replace(start_pos, string("bzn-api").length(), "crud");
+        }
+    return s;
+}
+
+/*string Raft::handle_storage_request(const string& req) {
     auto m = from_json_string(req);
     if (m.get<string>("raft") != "append-entries")
         {
@@ -225,12 +210,12 @@ string Raft::handle_storage_request(const string& req) {
         }
 
     return error_message(m, "Unsupported CRUD command");
-}
+}*/
 
-string Raft::error_message(boost::property_tree::ptree& req, const string& error) {
+/*string Raft::error_message(boost::property_tree::ptree& req, const string& error) {
     boost::property_tree::ptree msg;
     msg.put("raft", req.get<string>("raft"));
     msg.put("error", error);
     return to_json_string(msg);
-}
+}*/
 
