@@ -21,7 +21,7 @@ Node::Node(boost::asio::io_service& ios, const NodeInfo& i)
 
 void Node::run() {
     raft_.run(); // Start RAFT.
-    //server_.run(); // Start accepting connections.
+    server_.run(); // Start accepting connections.
 }
 
 vector<NodeInfo> Node::get_peers() const {

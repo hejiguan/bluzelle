@@ -61,7 +61,7 @@ void PeerSession::on_read(
                             shared_from_this(),
                             std::placeholders::_1,
                             std::placeholders::_2,
-                            true)));
+                            true /*schedule_read*/)));
 }
 
 void PeerSession::on_write(
@@ -82,8 +82,6 @@ void PeerSession::set_request_handler(std::function<string(const string&)> reque
 }
 
 void PeerSession::write_async(const string& request) {
-    //ws_.write(boost::asio::buffer(request));
-
     ws_.async_write(
             boost::asio::buffer(request),
             strand_.wrap(

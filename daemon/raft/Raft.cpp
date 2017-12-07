@@ -78,22 +78,24 @@ void Raft::start_leader_election() {
 void Raft::heartbeat() {
     std::cout << "♥ ";
 
-    for (auto &p : peers_)
+    if (crud_queue_.empty())
         {
-        p.send_request(s_heartbeat_message);
-        /*if (crud_queue_.empty())
-            p.send_request(s_heartbeat_message);
-        else
+        for (auto &p : peers_)
             {
-            auto m = crud_queue_.front();
-            p.send_request(m.second);
-            crud_queue_.pop();
-            }*/
-
-        std::cout << ".";
+            p.send_request(s_heartbeat_message);
+            std::cout << ".";
+            }
         }
-
-
+    else
+        {
+        auto m = crud_queue_.front();
+        for (auto &p : peers_)
+            {
+            p.send_request(m.second);
+            std::cout << ".";
+            }
+        crud_queue_.pop();
+        }
     std::cout << std::endl;
 
     // Re-arm timer.
@@ -106,11 +108,11 @@ void Raft::heartbeat() {
 }
 
 string Raft::handle_request(const string &req) {
-    // [todo] command factory
     auto cmd = from_json_string(req);
-    // [todo] Every message stored in message log to be send to GUI later.
-    auto message = cmd.get<string>("raft");
+
     string response;
+    auto message = cmd.get<string>("raft");
+
 
     if (message == "append-entries")
         {
@@ -123,23 +125,12 @@ string Raft::handle_request(const string &req) {
                 crud_queue_.push(std::make_pair<const string, const string>(
                         boost::lexical_cast<string>(s_transaction_id), string(req)));
                 }
-            // All CRUD requests must go through the leader. [todo] Authenticate request came from leader.
+            // All CRUD requests must go through the leader. [todo] Authenticate request that came from leader.
             response = handle_storage_request(req);
             }
         else
             { // Heartbeat message.
             std::cout << "♥ :" << req << std::endl;
-            }
-        }
-    else if (message == "request-vote")
-        {
-        if (info_.state_ != State::candidate)
-            {
-            response = "{\"raft\":\"request-vote\", \"vote\":\"yes\"}";
-            }
-        else
-            {
-            response = "{\"raft\":\"request-vote\", \"vote\":\"no\"}";
             }
         }
 
@@ -158,7 +149,8 @@ string Raft::handle_request(const string &req) {
 
 
     // From API to leader:
-    // {"raft":"append-entries", "data":{"command":"create", "key":"key-one", "value":"value-one"}}
+    // {"raft":"append-entries", "transaction-id":"123", "data":{"command":"create", "key":"key-one", "value":"value-one"}}
+
     // From leader to followers
     // {"raft":"append-entries", "transaction-id":"123", "data":{"command":"create", "key":"key-one", "value":"value-one"}}
     return response;
