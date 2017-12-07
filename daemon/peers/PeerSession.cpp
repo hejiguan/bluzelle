@@ -60,18 +60,21 @@ void PeerSession::on_read(
                             &PeerSession::on_write,
                             shared_from_this(),
                             std::placeholders::_1,
-                            std::placeholders::_2)));
+                            std::placeholders::_2,
+                            true)));
 }
 
 void PeerSession::on_write(
         boost::system::error_code ec,
-        std::size_t bytes_transferred) {
+        std::size_t bytes_transferred,
+        bool schedule_read) {
     boost::ignore_unused(bytes_transferred);
 
     if (ec)
         return fail(ec, "PeerSession::on_write");
 
-    do_read();
+    if (schedule_read)
+        do_read();
 }
 
 void PeerSession::set_request_handler(std::function<string(const string&)> request_handler) {
@@ -79,16 +82,15 @@ void PeerSession::set_request_handler(std::function<string(const string&)> reque
 }
 
 void PeerSession::write_async(const string& request) {
-    ws_.write(boost::asio::buffer(request));
+    //ws_.write(boost::asio::buffer(request));
 
-    /*ws_.async_write(
+    ws_.async_write(
             boost::asio::buffer(request),
-            //strand_.wrap(
+            strand_.wrap(
                     std::bind(
                             &PeerSession::on_write,
                             shared_from_this(),
                             std::placeholders::_1,
-                            std::placeholders::_2)
-            //)
-    );*/
+                            std::placeholders::_2,
+                            false /*schedule_read*/)));
 }

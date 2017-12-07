@@ -9,7 +9,7 @@ Node::Node(boost::asio::io_service& ios, const NodeInfo& i)
         : ios_(ios),
           raft_(ios_, i),
           server_(ios_,
-                  "127.0.0.1", // [todo] localhost?
+                  "127.0.0.1",
                   i.port_,
                   1,
                   // Raft::handle_request() is processing JSON.
@@ -21,13 +21,7 @@ Node::Node(boost::asio::io_service& ios, const NodeInfo& i)
 
 void Node::run() {
     raft_.run(); // Start RAFT.
-    server_.run(); // Start accepting connections.
-
-    ios_.run();
-
-    std::cout << "Press a key to stop" << std::endl;
-    getchar();
-    std::cout << "Stopping..." << std::endl;
+    //server_.run(); // Start accepting connections.
 }
 
 vector<NodeInfo> Node::get_peers() const {

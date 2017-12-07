@@ -13,7 +13,6 @@ Peer::Peer(boost::asio::io_service& ios, NodeInfo i) : info_(std::move(i)), ios_
 }
 
 string Peer::send_request(const string& req) {
-
     if (session_ == nullptr) // Check if we don't have a session.
         {
         try
@@ -36,6 +35,10 @@ string Peer::send_request(const string& req) {
                       << boost::lexical_cast<string>(info_.port_) << " '"
                       << ex.what() << "'" << std::endl;
             }
+        catch (...)
+            {
+            std::cout << "Unhandled exception." << std::endl;
+            }
         }
 
     if (session_ != nullptr) // Check again in case we just created a session.
@@ -46,6 +49,8 @@ string Peer::send_request(const string& req) {
         {
         std::cout << "No session to send request to" << std::endl;
         }
+
+    return string();
 }
 
 /*string Peer::handle_response(const string& resp) {

@@ -17,7 +17,6 @@ public:
     Peer(boost::asio::io_service& ios, NodeInfo i);
 
     string send_request(const string& req);
-    //string handle_response(const string& req);
 };
 
 #endif //BLUZELLE_PEER_H

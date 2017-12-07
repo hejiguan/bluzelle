@@ -34,7 +34,8 @@ public:
             std::size_t bytes_transferred);
 
     void on_write(boost::system::error_code ec,
-                  std::size_t bytes_transferred);
+                  std::size_t bytes_transferred,
+                  bool schedule_read = true);
 
     void write_async(const string& message);
 };

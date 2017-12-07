@@ -21,17 +21,6 @@ void PeerServer::run() {
                                               boost::asio::ip::tcp::endpoint{ip_address_, port_},
                                               request_handler_);
     listener->run();
-
-    // Run the I/O service on the requested number of threads
-    std::vector<std::thread> v_;
-    v_.reserve(threads_ - 1);
-    for (auto i = threads_ - 1; i > 0; --i)
-        v_.emplace_back(
-                [this]
-                    {
-                    ios_.run();
-                    });
-
     running_ = true;
 }
 

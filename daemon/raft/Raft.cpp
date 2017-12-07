@@ -1,5 +1,6 @@
 #include <iostream>
 #include <utility>
+#include <thread>
 
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/lexical_cast.hpp>
@@ -75,21 +76,23 @@ void Raft::start_leader_election() {
 }
 
 void Raft::heartbeat() {
-    std::cout << "♥";
+    std::cout << "♥ ";
 
-    for (auto& p : peers_)
+    for (auto &p : peers_)
         {
-        if (crud_queue_.empty())
+        p.send_request(s_heartbeat_message);
+        /*if (crud_queue_.empty())
             p.send_request(s_heartbeat_message);
         else
             {
             auto m = crud_queue_.front();
             p.send_request(m.second);
             crud_queue_.pop();
-            }
+            }*/
 
         std::cout << ".";
         }
+
 
     std::cout << std::endl;
 
