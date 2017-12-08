@@ -13,10 +13,12 @@ using std::string;
 class CrudCreateCommand : public Command {
 public:
     Storage& storage_;
-    tuple<string, string> data_;
+
+    string key_;
+    string value_;
 
 public:
-    CrudCreateCommand(Storage& s);
+    CrudCreateCommand(Storage& s, string k, string v);
     virtual boost::property_tree::ptree operator()();
 };
 

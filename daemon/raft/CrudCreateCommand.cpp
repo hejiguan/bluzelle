@@ -1,11 +1,11 @@
 #include "CrudCreateCommand.h"
 
-CrudCreateCommand::CrudCreateCommand(Storage& s)
-    : storage_(s) {
+CrudCreateCommand::CrudCreateCommand(Storage& s, string k, string v)
+    : storage_(s), key_(std::move(k)), value_(std::move(v)) {
 
 }
 
 boost::property_tree::ptree CrudCreateCommand::operator()() {
-    boost::property_tree::ptree result;
-    return result;
+    storage_.create(key_, value_);
+    return success();
 }

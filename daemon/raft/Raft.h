@@ -16,12 +16,8 @@ using std::pair;
 #include "NodeInfo.hpp"
 #include "Storage.h"
 #include "CommandFactory.h"
+#include "ApiCommandQueue.h"
 
-enum class LogRecordStatus {
-    unknown,
-    uncommitted,
-    committed,
-};
 
 class Raft {
     const string s_heartbeat_message = "{\"raft\":\"beep\"}";
@@ -34,7 +30,7 @@ private:
     PeerList peers_; // List of known peers, connected or not, some came from file some are just connected.
     NodeInfo info_; // This node info.
     Storage storage_; // Where the RAFTs log is replicated.
-    queue<pair<const string, const string>> crud_queue_;
+    ApiCommandQueue peer_queue_; // Keeps data to be sent to peers.
 
     CommandFactory command_factory_;
 
@@ -44,10 +40,12 @@ private:
     boost::property_tree::ptree from_json_string(const string& s) const;
     string to_json_string(boost::property_tree::ptree j) const;
 
-    string translate_message(const string& m) const;
 public:
-    Raft(boost::asio::io_service& io, const NodeInfo& info); // Node name, other params will be added.
+    Raft(boost::asio::io_service& io,
+         const NodeInfo& info); // Node name, other params will be added.
+
     void run();
+
     string handle_request(const string& req);
 };
 

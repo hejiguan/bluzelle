@@ -6,9 +6,10 @@
 class CrudReadCommand : public Command {
 public:
     Storage& storage_;
+    string key_;
 
 public:
-    CrudReadCommand(Storage& s);
+    CrudReadCommand(Storage& s, string k);
     virtual boost::property_tree::ptree operator()();
 };
 

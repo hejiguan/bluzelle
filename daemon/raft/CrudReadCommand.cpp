@@ -1,7 +1,7 @@
 #include "CrudReadCommand.h"
 
-CrudReadCommand::CrudReadCommand(Storage& s)
-        : storage_(s) {
+CrudReadCommand::CrudReadCommand(Storage& s, string k)
+        : storage_(s), key_(std::move(k)) {
 
 }
 

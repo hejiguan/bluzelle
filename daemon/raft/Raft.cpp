@@ -15,7 +15,7 @@ Raft::Raft(boost::asio::io_service &ios, const NodeInfo &i)
           peers_(ios_),
           info_(i),
           storage_("./storage_" + info_.name_ + ".txt"),
-          command_factory_(info_.state_, storage_),
+          command_factory_(info_.state_, storage_, peer_queue_),
           heartbeat_timer_(ios_,
                            boost::posix_time::milliseconds(raft_default_heartbeat_interval_milliseconds)) {
 
@@ -71,7 +71,7 @@ void Raft::run() {
 void Raft::heartbeat() {
     std::cout << "♥ ";
 
-    if (crud_queue_.empty())
+    if (peer_queue_.empty())
         {
         for (auto &p : peers_)
             {
@@ -81,13 +81,13 @@ void Raft::heartbeat() {
         }
     else
         {
-        auto m = crud_queue_.front();
+        auto m = peer_queue_.front();
         for (auto &p : peers_)
             {
-            //p.send_request(m.second);
+            p.send_request(m.second);
             std::cout << ".";
             }
-        crud_queue_.pop();
+        peer_queue_.pop();
         }
     std::cout << std::endl;
 
@@ -104,18 +104,8 @@ string Raft::handle_request(const string &req) {
     auto pt = from_json_string(req);
 
     unique_ptr<Command> command = command_factory_.get_command(pt);
-    if (info_.state_ == State::leader) // If I am leader CRUD commands need to be sent to followers.
-        {
-        ++ s_transaction_id;
-        crud_queue_.push(std::make_pair<const string, const string>(
-                boost::lexical_cast<string>(s_transaction_id), translate_message(req)));
-        }
+    string response = to_json_string(command->operator()());
 
-    string response;
-    if (command != nullptr)
-        response = to_json_string(command->operator()());
-    else
-        std::cout << "Unsupported command: '" << req << "'" << std::endl;
     return response;
 }
 
@@ -123,10 +113,11 @@ boost::property_tree::ptree Raft::from_json_string(const string &s) const {
     std::stringstream ss;
     ss << s;
 
-    boost::property_tree::ptree json;
     try
         {
+        boost::property_tree::ptree json;
         boost::property_tree::read_json(ss, json);
+        return json;
         }
     catch (boost::property_tree::json_parser_error &ex)
         {
@@ -134,8 +125,7 @@ boost::property_tree::ptree Raft::from_json_string(const string &s) const {
         std::cout << s << std::endl;
         }
 
-
-    return json;
+    return boost::property_tree::ptree();
 }
 
 string Raft::to_json_string(boost::property_tree::ptree pt) const {
@@ -152,70 +142,4 @@ string Raft::to_json_string(boost::property_tree::ptree pt) const {
 
     return string();
 }
-
-// From API to CRUD (from API<->leader to leader<->followers).
-string Raft::translate_message(const string& s) const {
-    auto m = s;
-    size_t start_pos = m.find("bzn-api");
-    if (start_pos != std::string::npos)
-        {
-        m.replace(start_pos, string("bzn-api").length(), "crud");
-        }
-    return s;
-}
-
-/*string Raft::handle_storage_request(const string& req) {
-    auto m = from_json_string(req);
-    if (m.get<string>("raft") != "append-entries")
-        {
-        return error_message(m, "Not a CRUD command. Ignored.");
-        }
-
-    if (m.get<string>("transaction-id").empty()) // All CRUD requests must come from leader and have signed transaction id.
-        {
-        return error_message(m, "CRUD requst is not originated from leader. Ignored");
-        }
-
-    auto data  = m.get_child("data.");
-
-    string crud = data.get<string>("command");
-    string k = data.get<string>("key");
-    string v = data.get<string>("value");
-
-    if (crud == "create")
-        {
-        storage_.create(k, v);
-        return error_message(m, "ok");
-        }
-    else if (crud == "read")
-        {
-        v = storage_.read(k);
-        if (v.empty())
-            return error_message(m, "Value is missing");
-        else
-            {
-            data.put("value", v);
-            return to_json_string(m);
-            }
-        }
-    else if (crud == "update")
-        {
-        storage_.update(k,v);
-        return error_message(m, "ok");
-        }
-    else if (crud == "delete")
-        {
-        storage_.remove(k);
-        return error_message(m, "ok");
-        }
-
-    return error_message(m, "Unsupported CRUD command");
-}*/
-
-/*string Raft::error_message(boost::property_tree::ptree& req, const string& error) {
-    boost::property_tree::ptree msg;
-    msg.put("raft", req.get<string>("raft"));
-    msg.put("error", error);
-    return to_json_string(msg);
-}*/
 
