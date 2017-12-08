@@ -2,18 +2,23 @@
 
 #include "ApiReadCommand.h"
 
-ApiReadCommand::ApiReadCommand(ApiCommandQueue& q, Storage& s, string k)
-        : queue_(q), storage_(s), key_(std::move(k)) {
+ApiReadCommand::ApiReadCommand(ApiCommandQueue& q, Storage& s, boost::property_tree::ptree pt)
+        : queue_(q), storage_(s), pt_(std::move(pt)) {
 
 }
 
 boost::property_tree::ptree ApiReadCommand::operator()() {
-    auto val = storage_.read(key_);
+    auto data  = pt_.get_child("data.");
 
-    /*auto f =
-            boost::format("{\"crud\":\"read\", \"transaction-id\":\"123\", \"data\":{key\":\"%s\"}}")
-            % key_;
-    queue_.push(std::make_pair("123", f.str()));*/
+    string key;
+    if (data.count("key") > 0)
+        key = data.get<string>("key");
 
-    return result(val);
+    if (!key.empty())
+        {
+        string val = storage_.read(key); // Read from local storage, no need to send to followers.
+        return result(val);
+        }
+
+    return error("key is missing");
 }

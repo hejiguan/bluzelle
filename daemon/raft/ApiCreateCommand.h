@@ -9,12 +9,10 @@ class ApiCreateCommand : public Command {
 public:
     ApiCommandQueue queue_;
     Storage& storage_;
-
-    string key_;
-    string value_;
+    boost::property_tree::ptree pt_;
 
 public:
-    ApiCreateCommand(ApiCommandQueue& q, Storage& s, string k, string v);
+    ApiCreateCommand(ApiCommandQueue& q, Storage& s, boost::property_tree::ptree pt);
     virtual boost::property_tree::ptree operator()();
 };
 

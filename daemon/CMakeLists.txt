@@ -72,7 +72,7 @@ set(SOURCE_FILES
         Node.h
         Node.cpp
         main.cpp
-        MessageInfo.hpp raft/CommandFactory.h raft/Command.hpp raft/CrudCreateCommand.h raft/CrudCreateCommand.cpp raft/RaftHeartbeatCommand.h raft/RaftHeartbeatCommand.cpp raft/CrudReadCommand.h raft/CrudReadCommand.cpp raft/CommandFactory.cpp raft/ApiCreateCommand.h raft/ApiCommandQueue.h raft/ApiReadCommand.h raft/ApiReadCommand.cpp raft/ApiCreateCommand.cpp raft/ErrorCommand.hpp)
+        MessageInfo.hpp raft/CommandFactory.h raft/Command.hpp raft/CrudCreateCommand.h raft/CrudCreateCommand.cpp raft/RaftHeartbeatCommand.h raft/RaftHeartbeatCommand.cpp raft/CrudReadCommand.h raft/CrudReadCommand.cpp raft/CommandFactory.cpp raft/ApiCreateCommand.h raft/ApiCommandQueue.h raft/ApiReadCommand.h raft/ApiReadCommand.cpp raft/ApiCreateCommand.cpp raft/ErrorCommand.hpp raft/JsonTools.h raft/JsonTools.cpp)
 add_executable(the_db ${SOURCE_FILES})
 target_link_libraries(the_db ${Boost_LIBRARIES})
 if(UNIX AND NOT APPLE)

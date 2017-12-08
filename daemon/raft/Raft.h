@@ -23,7 +23,7 @@ class Raft {
     const string s_heartbeat_message = "{\"raft\":\"beep\"}";
 
 private:
-    static const uint raft_default_heartbeat_interval_milliseconds = 1050; // 50 millisec.
+    static const uint raft_default_heartbeat_interval_milliseconds = 5050; // 50 millisec.
 
     boost::asio::io_service& ios_;
 
@@ -36,9 +36,6 @@ private:
 
     boost::asio::deadline_timer heartbeat_timer_;
     void heartbeat();
-
-    boost::property_tree::ptree from_json_string(const string& s) const;
-    string to_json_string(boost::property_tree::ptree j) const;
 
 public:
     Raft(boost::asio::io_service& io,

@@ -9,10 +9,10 @@ class ApiReadCommand : public Command {
 public:
     ApiCommandQueue& queue_;
     Storage& storage_;
-    string key_;
+    boost::property_tree::ptree pt_;
 
 public:
-    ApiReadCommand(ApiCommandQueue& q, Storage& s, string k);
+    ApiReadCommand(ApiCommandQueue& q, Storage& s, boost::property_tree::ptree pt);
     virtual boost::property_tree::ptree operator()();
 };
 

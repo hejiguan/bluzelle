@@ -3,10 +3,10 @@
 #include <thread>
 #include <sstream>
 
-#include <boost/property_tree/json_parser.hpp>
 #include <boost/lexical_cast.hpp>
 
 #include "Raft.h"
+#include "JsonTools.h"
 
 static uint64_t s_transaction_id = 0;
 
@@ -69,10 +69,9 @@ void Raft::run() {
 //}
 
 void Raft::heartbeat() {
-    std::cout << "♥ ";
-
     if (peer_queue_.empty())
         {
+        std::cout << "♥ ";
         for (auto &p : peers_)
             {
             p.send_request(s_heartbeat_message);
@@ -81,6 +80,7 @@ void Raft::heartbeat() {
         }
     else
         {
+        std::cout << "❥ ";
         auto m = peer_queue_.front();
         for (auto &p : peers_)
             {
@@ -101,45 +101,13 @@ void Raft::heartbeat() {
 }
 
 string Raft::handle_request(const string &req) {
-    auto pt = from_json_string(req);
+    auto pt = pt_from_json_string(req);
 
     unique_ptr<Command> command = command_factory_.get_command(pt);
-    string response = to_json_string(command->operator()());
+    string response = pt_to_json_string(command->operator()());
 
     return response;
 }
 
-boost::property_tree::ptree Raft::from_json_string(const string &s) const {
-    std::stringstream ss;
-    ss << s;
 
-    try
-        {
-        boost::property_tree::ptree json;
-        boost::property_tree::read_json(ss, json);
-        return json;
-        }
-    catch (boost::property_tree::json_parser_error &ex)
-        {
-        std::cout << "Raft::from_json_string() threw '" << ex.what() << "' parsing " << std::endl;
-        std::cout << s << std::endl;
-        }
-
-    return boost::property_tree::ptree();
-}
-
-string Raft::to_json_string(boost::property_tree::ptree pt) const {
-    try
-        {
-        std::stringstream ss;
-        boost::property_tree::write_json(ss, pt);
-        return ss.str();
-        }
-    catch (boost::property_tree::json_parser_error &ex)
-        {
-        std::cout << "Raft::to_json_string() threw '" << ex.what() << std::endl;
-        }
-
-    return string();
-}
 

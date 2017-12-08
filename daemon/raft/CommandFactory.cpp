@@ -78,10 +78,10 @@ unique_ptr<Command> CommandFactory::make_api_command(const boost::property_tree:
     auto dat = get_data(pt);
 
     if (cmd == "create")
-        return std::make_unique<ApiCreateCommand>(queue_, storage_, dat.first, dat.second);
+        return std::make_unique<ApiCreateCommand>(queue_, storage_, pt);
 
     if (cmd == "read")
-        return std::make_unique<ApiReadCommand>(queue_, storage_, dat.first);
+        return std::make_unique<ApiReadCommand>(queue_, storage_, pt);
 
     return nullptr;
 }
