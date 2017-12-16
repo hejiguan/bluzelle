@@ -7,7 +7,7 @@
 
 class ApiCreateCommand : public Command {
 public:
-    ApiCommandQueue queue_;
+    ApiCommandQueue& queue_;
     Storage& storage_;
     boost::property_tree::ptree pt_;
 
